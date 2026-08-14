@@ -89,63 +89,68 @@ function Splash({ onStart }) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         color: PAPER,
-        padding: "40px 28px",
       }}
     >
       <FontStyles />
-      <div className="sc-mono" style={{ fontSize: 12, letterSpacing: 2, color: SLATE }}>
-        SCAMCHECK · CASE INTAKE
+      <div style={{ flexShrink: 0, padding: "28px 28px 0" }}>
+        <div className="sc-mono" style={{ fontSize: 12, letterSpacing: 2, color: SLATE }}>
+          SCAMCHECK · CASE INTAKE
+        </div>
       </div>
 
-      <div className="sc-fadein" style={{ maxWidth: 340 }}>
-        <div
-          className="sc-mono"
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 28px" }}>
+        <div className="sc-fadein" style={{ maxWidth: 340 }}>
+          <div
+            className="sc-mono"
+            style={{
+              display: "inline-block",
+              fontSize: 11,
+              letterSpacing: 2,
+              color: ALARM,
+              border: `1px solid ${ALARM}`,
+              padding: "4px 10px",
+              marginBottom: 18,
+            }}
+          >
+            BEFORE YOU BUY
+          </div>
+          <h1 className="sc-display" style={{ fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0 }}>
+            Don't get
+            <br />
+            played.
+          </h1>
+          <p className="sc-body" style={{ fontSize: 15, color: "#C9C6BC", marginTop: 16, lineHeight: 1.5 }}>
+            Saw an ad that seemed a little too good? Describe it. We'll pull the reviews,
+            the complaints, and the receipts — then give it to you straight.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ flexShrink: 0, padding: "0 28px 28px" }}>
+        <button
+          onClick={onStart}
+          className="sc-display"
           style={{
-            display: "inline-block",
-            fontSize: 11,
-            letterSpacing: 2,
-            color: ALARM,
-            border: `1px solid ${ALARM}`,
-            padding: "4px 10px",
-            marginBottom: 18,
+            width: "100%",
+            background: ALARM,
+            color: INK,
+            border: "none",
+            borderRadius: 4,
+            padding: "16px 20px",
+            fontSize: 16,
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            cursor: "pointer",
           }}
         >
-          BEFORE YOU BUY
-        </div>
-        <h1 className="sc-display" style={{ fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0 }}>
-          Don't get
-          <br />
-          played.
-        </h1>
-        <p className="sc-body" style={{ fontSize: 15, color: "#C9C6BC", marginTop: 16, lineHeight: 1.5 }}>
-          Saw an ad that seemed a little too good? Describe it. We'll pull the reviews,
-          the complaints, and the receipts — then give it to you straight.
-        </p>
+          OPEN A CASE FILE <ArrowRight size={18} />
+        </button>
       </div>
-
-      <button
-        onClick={onStart}
-        className="sc-display"
-        style={{
-          background: ALARM,
-          color: INK,
-          border: "none",
-          borderRadius: 4,
-          padding: "16px 20px",
-          fontSize: 16,
-          fontWeight: 700,
-          letterSpacing: 0.5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          cursor: "pointer",
-        }}
-      >
-        OPEN A CASE FILE <ArrowRight size={18} />
-      </button>
     </div>
   );
 }
