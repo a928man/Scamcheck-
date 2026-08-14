@@ -643,7 +643,7 @@ export default function ScamCheckApp() {
       style={{
         width: "100%",
         maxWidth: 400,
-        height: 720,
+        height: "min(720px, calc(100dvh - 16px))",
         margin: "0 auto",
         background: INK,
         borderRadius: 22,
