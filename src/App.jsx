@@ -15,6 +15,7 @@ import {
   Globe,
 } from "lucide-react";
 import { translations, LANGUAGE_ORDER } from "./translations";
+import { supabase } from "./supabaseClient";
 
 const INK = "#12141C";
 const PAPER = "#EDEAE0";
@@ -42,7 +43,7 @@ function buildSystemPrompt(t, langName) {
 
 You will be given a description of an ad someone saw, where they saw it, and optionally a link. Either a description or a link will always be present — if only a link is given, treat the link itself as the subject and research the company/product it points to.
 
-Search the web for independent reviews, complaints, refund/chargeback reports, fact-checks of specific claims, and any scam or fraud reports connected to this product or company. Also look for genuine positive evidence (independent testing, verified buyer reports, reputable coverage).
+Search the web for independent reviews, complaints, refund/chargeback reports, fact-checks of specific claims, and any scam or fraud reports connected to this product or company. Also look for genuine positive evidence (independent testing, verified buyer reports, reputable coverage). Be efficient: use 1-3 targeted searches rather than many broad ones, and favor sources whose preview snippet already answers the question over ones that require opening the full page.
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this shape:
 {
@@ -484,9 +485,9 @@ function extractJson(text) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-function normalizeKey(q) {
+function normalizeSlug(q) {
   const raw = (q.link?.trim() || q.description?.trim() || "").toLowerCase();
-  return "case:" + raw.replace(/[\s/\\'"]+/g, "_").slice(0, 150);
+  return raw.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 150) || "unknown";
 }
 
 const FILLER_PHRASES = [
@@ -501,40 +502,6 @@ const STOPWORDS = new Set([
   "this", "that", "it", "its", "ad", "ads",
 ]);
 
-// Lightweight storage wrapper backed by the browser's localStorage.
-// Note: this is per-device only (not shared across users). Swapping this for
-// a real shared database is the natural next upgrade once the app has real users.
-const storage = {
-  async get(key) {
-    try {
-      const v = window.localStorage.getItem(key);
-      return v ? { value: v } : null;
-    } catch (e) {
-      return null;
-    }
-  },
-  async set(key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-      return { key, value };
-    } catch (e) {
-      return null;
-    }
-  },
-  async list(prefix) {
-    try {
-      const keys = [];
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
-        if (k && k.startsWith(prefix)) keys.push(k);
-      }
-      return { keys };
-    } catch (e) {
-      return { keys: [] };
-    }
-  },
-};
-
 function significantWords(q) {
   let text = (q.description?.trim() || "").toLowerCase();
   if (!text) return [];
@@ -545,16 +512,19 @@ function significantWords(q) {
   return [...new Set(words)];
 }
 
-async function findExistingMatch(curWords) {
+// Looks across every cached ad IN THE SAME LANGUAGE for a fuzzy word-overlap
+// match, same logic as before — just querying Supabase instead of localStorage,
+// which is what makes this shared across every user of the app.
+async function findExistingSlug(curWords, lang) {
   if (!curWords.length) return null;
   try {
-    const listRes = await storage.list("case:slug:");
-    if (!listRes?.keys?.length) return null;
+    const { data, error } = await supabase.from("cached_ads").select("slug").eq("lang", lang);
+    if (error || !data?.length) return null;
     const setA = new Set(curWords);
     let best = null;
     let bestScore = 0;
-    for (const k of listRes.keys) {
-      const kw = k.slice("case:slug:".length).split("-").filter(Boolean);
+    for (const row of data) {
+      const kw = row.slug.split("-").filter(Boolean);
       if (!kw.length) continue;
       const setB = new Set(kw);
       let intersection = 0;
@@ -562,12 +532,38 @@ async function findExistingMatch(curWords) {
       const overlap = intersection / Math.min(setA.size, setB.size);
       if (overlap > bestScore) {
         bestScore = overlap;
-        best = k;
+        best = row.slug;
       }
     }
     return bestScore >= 0.5 ? best : null;
   } catch (e) {
     return null;
+  }
+}
+
+async function getCachedResult(slug, lang) {
+  try {
+    const { data, error } = await supabase.from("cached_ads").select("*").eq("slug", slug).eq("lang", lang).maybeSingle();
+    if (error || !data) return null;
+    return { result: data.result_json, caseId: data.case_id };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function saveCachedResult(slug, lang, result, caseId) {
+  try {
+    await supabase.from("cached_ads").upsert({ slug, lang, result_json: result, case_id: caseId }, { onConflict: "slug,lang" });
+  } catch (e) {
+    // caching is a nice-to-have — don't block the user if it fails
+  }
+}
+
+async function logSearchEvent(slug) {
+  try {
+    await supabase.from("search_events").insert({ slug });
+  } catch (e) {
+    // non-critical — powers the future leaderboard, shouldn't block a search
   }
 }
 
@@ -602,31 +598,31 @@ export default function ScamCheckApp() {
     setFromCache(false);
 
     const curWords = significantWords(q);
-    let key = null;
+    let slug = null;
 
     try {
       if (curWords.length) {
-        const matchedKey = await findExistingMatch(curWords);
-        if (matchedKey) {
-          const cached = await storage.get(matchedKey);
-          if (cached?.value) {
-            const parsedCached = JSON.parse(cached.value);
-            setResult(parsedCached.result);
-            setCaseId(parsedCached.caseId);
+        const matchedSlug = await findExistingSlug(curWords, lang);
+        if (matchedSlug) {
+          const cached = await getCachedResult(matchedSlug, lang);
+          if (cached) {
+            setResult(cached.result);
+            setCaseId(cached.caseId);
             setFromCache(true);
             setScreen("results");
+            logSearchEvent(matchedSlug);
             return;
           }
         }
       } else {
-        const linkKey = normalizeKey(q);
-        const cached = await storage.get(linkKey);
-        if (cached?.value) {
-          const parsedCached = JSON.parse(cached.value);
-          setResult(parsedCached.result);
-          setCaseId(parsedCached.caseId);
+        const linkSlug = normalizeSlug(q);
+        const cached = await getCachedResult(linkSlug, lang);
+        if (cached) {
+          setResult(cached.result);
+          setCaseId(cached.caseId);
           setFromCache(true);
           setScreen("results");
+          logSearchEvent(linkSlug);
           return;
         }
       }
@@ -634,7 +630,7 @@ export default function ScamCheckApp() {
       // no cached entry — fall through to a live search
     }
 
-    key = curWords.length ? "case:slug:" + [...curWords].sort().join("-").slice(0, 100) : normalizeKey(q);
+    slug = curWords.length ? [...curWords].sort().join("-").slice(0, 100) : normalizeSlug(q);
 
     setScreen("loading");
     const newCaseId = String(1000 + Math.floor(Math.random() * 8999));
@@ -673,11 +669,8 @@ export default function ScamCheckApp() {
       setResult(parsed);
       setScreen("results");
 
-      try {
-        await storage.set(key, JSON.stringify({ result: parsed, caseId: newCaseId }));
-      } catch (e) {
-        // caching is a nice-to-have — don't block the user if it fails
-      }
+      saveCachedResult(slug, lang, parsed, newCaseId);
+      logSearchEvent(slug);
     } catch (err) {
       setErrorMsg(
         err.message === "No JSON found in response" || err.message.includes("JSON") ? t.errorJsonFailed : t.errorReqFailed
