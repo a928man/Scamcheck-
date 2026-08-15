@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -12,7 +12,9 @@ import {
   FileSearch,
   RotateCcw,
   ExternalLink,
+  Globe,
 } from "lucide-react";
+import { translations, LANGUAGE_ORDER } from "./translations";
 
 const INK = "#12141C";
 const PAPER = "#EDEAE0";
@@ -21,24 +23,22 @@ const CAUTION = "#FFB020";
 const VERIFIED = "#35C488";
 const SLATE = "#8A8F9E";
 
-const LOADING_LINES = [
-  "Pulling up the receipts…",
-  "Cross-referencing reviews…",
-  "Checking who actually got the product…",
-  "Weighing the evidence…",
-  "Drafting the verdict…",
-];
+const WHERE_OPTIONS = ["YouTube", "Instagram", "TikTok", "TV", "Facebook"];
 
-const WHERE_OPTIONS = ["YouTube", "Instagram", "TikTok", "TV", "Facebook", "Somewhere else"];
+function getInitialLang() {
+  try {
+    const saved = window.localStorage.getItem("sc-lang");
+    if (saved && translations[saved]) return saved;
+    const browser = (navigator.language || "en").slice(0, 2);
+    if (translations[browser]) return browser;
+  } catch (e) {
+    // ignore
+  }
+  return "en";
+}
 
-const VERDICT_META = {
-  trust: { label: "LIKELY LEGIT", color: VERIFIED, Icon: ShieldCheck, rotate: "-6deg" },
-  caution: { label: "PROCEED WITH CAUTION", color: CAUTION, Icon: ShieldQuestion, rotate: "4deg" },
-  avoid: { label: "LIKELY A SCAM", color: ALARM, Icon: ShieldAlert, rotate: "-4deg" },
-  unknown: { label: "NOT ENOUGH TO GO ON", color: SLATE, Icon: ShieldQuestion, rotate: "2deg" },
-};
-
-const SYSTEM_PROMPT = `You are ScamCheck, a research assistant that investigates advertisements for a consumer safety app.
+function buildSystemPrompt(t, langName) {
+  return `You are ScamCheck, a research assistant that investigates advertisements for a consumer safety app.
 
 You will be given a description of an ad someone saw, where they saw it, and optionally a link. Either a description or a link will always be present — if only a link is given, treat the link itself as the subject and research the company/product it points to.
 
@@ -53,20 +53,22 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactl
 }
 
 Rules:
+- Write every "summary", "text", and "src" value in ${langName}, regardless of what language the input is in. Only the JSON keys themselves stay in English.
 - Use "unknown" only if you genuinely cannot find enough information after searching — do not invent findings to fill space.
 - positives: 0 to 4 items. negatives: 0 to 5 items. Every item must reflect something you actually found, not ad copy or assumptions.
 - "src" should be a real, specific outlet or source name (e.g. "Better Business Bureau", "Reddit r/scams", "Wirecutter"), not a generic label.
 - "url" must be the real, exact URL of the page you found that finding on. Never invent or guess a URL — if you don't have the real URL for a finding, omit that finding entirely rather than including a fake or best-guess link.
 - Base the verdict on the weight of real evidence, not on how the ad sounds.
 - Keep each "text" under 25 words.`;
+}
 
 function FontStyles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
-      .sc-display { font-family: 'Space Grotesk', sans-serif; }
-      .sc-body { font-family: 'Inter', sans-serif; }
-      .sc-mono { font-family: 'JetBrains Mono', monospace; }
+      @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Hebrew:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&family=Noto+Sans+Bengali:wght@400;500;700&display=swap');
+      .sc-display { font-family: 'Space Grotesk', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Hebrew', 'Noto Sans SC', 'Noto Sans Devanagari', 'Noto Sans Bengali', sans-serif; }
+      .sc-body { font-family: 'Inter', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Hebrew', 'Noto Sans SC', 'Noto Sans Devanagari', 'Noto Sans Bengali', sans-serif; }
+      .sc-mono { font-family: 'JetBrains Mono', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Hebrew', 'Noto Sans SC', 'Noto Sans Devanagari', 'Noto Sans Bengali', monospace; }
       .sc-tape {
         background: repeating-linear-gradient(45deg, #1B1E29 0, #1B1E29 14px, #191C26 14px, #191C26 28px);
       }
@@ -81,48 +83,92 @@ function FontStyles() {
   );
 }
 
-function Splash({ onStart }) {
+function LanguagePicker({ lang, setLang, dark }) {
+  const [open, setOpen] = useState(false);
+  const color = dark ? PAPER : INK;
   return (
-    <div
-      className="sc-tape"
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        color: PAPER,
-      }}
-    >
-      <FontStyles />
-      <div style={{ flexShrink: 0, padding: "28px 28px 0" }}>
-        <div className="sc-mono" style={{ fontSize: 12, letterSpacing: 2, color: SLATE }}>
-          SCAMCHECK · CASE INTAKE
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Language"
+        style={{ background: "none", border: `1px solid ${dark ? "#3A3F4E" : "#C9C6BC"}`, borderRadius: 4, padding: "6px 8px", color, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+      >
+        <Globe size={14} />
+        <span className="sc-mono" style={{ fontSize: 11 }}>{translations[lang].native}</span>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "110%",
+            insetInlineEnd: 0,
+            background: dark ? "#1B1E29" : "#fff",
+            border: `1px solid ${dark ? "#3A3F4E" : "#C9C6BC"}`,
+            borderRadius: 6,
+            padding: 6,
+            zIndex: 20,
+            maxHeight: 260,
+            overflowY: "auto",
+            minWidth: 140,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+          }}
+        >
+          {LANGUAGE_ORDER.map((code) => (
+            <button
+              key={code}
+              onClick={() => {
+                setLang(code);
+                setOpen(false);
+              }}
+              className="sc-body"
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "start",
+                background: code === lang ? (dark ? "#2A2F3E" : "#F0EFEA") : "none",
+                border: "none",
+                borderRadius: 4,
+                padding: "8px 10px",
+                color,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              {translations[code].native}
+            </button>
+          ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function Splash({ onStart, t, lang, setLang }) {
+  return (
+    <div className="sc-tape" style={{ height: "100%", display: "flex", flexDirection: "column", color: PAPER }}>
+      <FontStyles />
+      <div style={{ flexShrink: 0, padding: "28px 28px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div className="sc-mono" style={{ fontSize: 12, letterSpacing: 2, color: SLATE }}>
+          SCAMCHECK · {t.caseIntake}
+        </div>
+        <LanguagePicker lang={lang} setLang={setLang} dark />
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 28px" }}>
         <div className="sc-fadein" style={{ maxWidth: 340 }}>
           <div
             className="sc-mono"
-            style={{
-              display: "inline-block",
-              fontSize: 11,
-              letterSpacing: 2,
-              color: ALARM,
-              border: `1px solid ${ALARM}`,
-              padding: "4px 10px",
-              marginBottom: 18,
-            }}
+            style={{ display: "inline-block", fontSize: 11, letterSpacing: 2, color: ALARM, border: `1px solid ${ALARM}`, padding: "4px 10px", marginBottom: 18 }}
           >
-            BEFORE YOU BUY
+            {t.eyebrow}
           </div>
-          <h1 className="sc-display" style={{ fontSize: 44, lineHeight: 1.05, fontWeight: 700, margin: 0 }}>
-            Don't get
+          <h1 className="sc-display" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700, margin: 0 }}>
+            {t.headline1}
             <br />
-            played.
+            {t.headline2}
           </h1>
           <p className="sc-body" style={{ fontSize: 15, color: "#C9C6BC", marginTop: 16, lineHeight: 1.5 }}>
-            Saw an ad that seemed a little too good? Describe it. We'll pull the reviews,
-            the complaints, and the receipts — then give it to you straight.
+            {t.tagline}
           </p>
         </div>
       </div>
@@ -148,7 +194,7 @@ function Splash({ onStart }) {
             cursor: "pointer",
           }}
         >
-          OPEN A CASE FILE <ArrowRight size={18} />
+          {t.cta} <ArrowRight size={18} style={{ transform: document.dir === "rtl" ? "scaleX(-1)" : "none" }} />
         </button>
       </div>
     </div>
@@ -157,16 +203,12 @@ function Splash({ onStart }) {
 
 const TRACKING_DOMAINS = ["googleadservices.com", "doubleclick.net", "googlesyndication.com", "google.com/aclk", "bat.bing.com"];
 
-function linkWarning(link) {
+function linkWarning(link, t) {
   const trimmed = link.trim();
   if (!trimmed) return null;
-  if (trimmed.length > 300) {
-    return "That link looks like an ad-tracking redirect, not the actual page. Try the product's real website URL instead, or just describe the ad below.";
-  }
+  if (trimmed.length > 300) return t.trackingWarnLong;
   const lower = trimmed.toLowerCase();
-  if (TRACKING_DOMAINS.some((d) => lower.includes(d))) {
-    return "That's an ad-network tracking link, not the destination page. Open it, then paste the URL it lands on — or just describe the ad below.";
-  }
+  if (TRACKING_DOMAINS.some((d) => lower.includes(d))) return t.trackingWarnDomain;
   return null;
 }
 
@@ -194,58 +236,59 @@ const inputStyle = {
   outline: "none",
 };
 
-function InputScreen({ onBack, onSubmit, prefill }) {
+function InputScreen({ onBack, onSubmit, prefill, t, lang, setLang }) {
   const [where, setWhere] = useState(prefill?.where || WHERE_OPTIONS[0]);
   const [description, setDescription] = useState(prefill?.description || "");
   const [link, setLink] = useState(prefill?.link || "");
 
-  const canSubmit =
-    (description.trim().length > 2 || link.trim().length > 5) &&
-    !(linkWarning(link) && description.trim().length <= 2);
+  const warning = linkWarning(link, t);
+  const canSubmit = (description.trim().length > 2 || link.trim().length > 5) && !(warning && description.trim().length <= 2);
 
-  const warning = linkWarning(link);
+  const BackIcon = document.dir === "rtl" ? ArrowRight : ArrowLeft;
 
   return (
     <div style={{ height: "100%", background: PAPER, color: INK, display: "flex", flexDirection: "column" }}>
       <FontStyles />
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 20px 12px", borderBottom: `1.5px dashed ${INK}55` }}>
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: INK, padding: 4 }} aria-label="Back">
-          <ArrowLeft size={20} />
+          <BackIcon size={20} />
         </button>
-        <div>
-          <div className="sc-mono" style={{ fontSize: 11, color: SLATE, letterSpacing: 1.5 }}>NEW CASE FILE</div>
-          <div className="sc-display" style={{ fontSize: 18, fontWeight: 700 }}>Describe the ad</div>
+        <div style={{ flex: 1 }}>
+          <div className="sc-mono" style={{ fontSize: 11, color: SLATE, letterSpacing: 1.5 }}>{t.newCaseFile}</div>
+          <div className="sc-display" style={{ fontSize: 18, fontWeight: 700 }}>{t.describeAd}</div>
         </div>
+        <LanguagePicker lang={lang} setLang={setLang} />
       </div>
 
       <div style={{ padding: "20px", overflowY: "auto", flex: 1, minHeight: 0 }}>
-        <Field label="Where did you see it?">
+        <Field label={t.whereLabel}>
           <select value={where} onChange={(e) => setWhere(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
             {WHERE_OPTIONS.map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
+            <option value="Somewhere else">{t.somewhereElse}</option>
           </select>
         </Field>
 
-        <Field label="Company, product, or describe the ad">
+        <Field label={t.descLabel}>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. a supplement called 'FlexBoost' that claims to melt belly fat in a week"
+            placeholder={t.descPlaceholder}
             rows={4}
             style={{ ...inputStyle, resize: "vertical", fontFamily: "'Inter', sans-serif" }}
           />
         </Field>
 
-        <Field label="Link to the ad or product (optional if you described it above)">
+        <Field label={t.linkLabel}>
           <div style={{ position: "relative" }}>
-            <Link2 size={16} style={{ position: "absolute", left: 12, top: 14, color: SLATE }} />
+            <Link2 size={16} style={{ position: "absolute", insetInlineStart: 12, top: 14, color: SLATE }} />
             <input
               value={link}
               onChange={(e) => setLink(e.target.value.slice(0, 500))}
               placeholder="https://…"
               maxLength={500}
-              style={{ ...inputStyle, paddingLeft: 34, borderColor: warning ? CAUTION : INK }}
+              style={{ ...inputStyle, paddingInlineStart: 34, borderColor: warning ? CAUTION : INK }}
             />
           </div>
           {warning && (
@@ -278,19 +321,19 @@ function InputScreen({ onBack, onSubmit, prefill }) {
             cursor: canSubmit ? "pointer" : "not-allowed",
           }}
         >
-          INVESTIGATE THIS AD <Search size={16} />
+          {t.submitBtn} <Search size={16} />
         </button>
       </div>
     </div>
   );
 }
 
-function LoadingScreen() {
+function LoadingScreen({ t }) {
   const [lineIdx, setLineIdx] = useState(0);
   useEffect(() => {
-    const t1 = setInterval(() => setLineIdx((i) => (i + 1) % LOADING_LINES.length), 1400);
+    const t1 = setInterval(() => setLineIdx((i) => (i + 1) % t.loadingLines.length), 1400);
     return () => clearInterval(t1);
-  }, []);
+  }, [t]);
 
   return (
     <div className="sc-tape" style={{ height: "100%", color: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, textAlign: "center" }}>
@@ -298,33 +341,33 @@ function LoadingScreen() {
       <div style={{ width: 84, height: 84, borderRadius: "50%", border: `2px solid ${ALARM}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 26, position: "relative", overflow: "hidden" }}>
         <FileSearch size={34} color={ALARM} style={{ animation: "sc-scan 1.8s ease-in-out infinite" }} />
       </div>
-      <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Working the case…</div>
-      <div className="sc-mono" style={{ fontSize: 13, color: SLATE, minHeight: 20 }}>{LOADING_LINES[lineIdx]}</div>
-      <div className="sc-mono" style={{ fontSize: 11, color: "#5A5F6E", marginTop: 18 }}>Live web research — this can take up to a minute.</div>
+      <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{t.loadingTitle}</div>
+      <div className="sc-mono" style={{ fontSize: 13, color: SLATE, minHeight: 20 }}>{t.loadingLines[lineIdx]}</div>
+      <div className="sc-mono" style={{ fontSize: 11, color: "#5A5F6E", marginTop: 18 }}>{t.loadingNote}</div>
     </div>
   );
 }
 
-function ErrorScreen({ message, onRetry, onBack }) {
+function ErrorScreen({ message, onRetry, onBack, t }) {
   return (
     <div style={{ height: "100%", background: PAPER, color: INK, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center" }}>
       <FontStyles />
       <ShieldQuestion size={40} color={ALARM} style={{ marginBottom: 16 }} />
-      <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Case went cold</div>
+      <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{t.errorTitle}</div>
       <div className="sc-body" style={{ fontSize: 14, color: "#4A4E5A", marginBottom: 22, lineHeight: 1.5 }}>{message}</div>
       <div style={{ display: "flex", gap: 10, width: "100%" }}>
         <button onClick={onBack} className="sc-display" style={{ flex: 1, background: "transparent", color: INK, border: `1.5px solid ${INK}`, borderRadius: 4, padding: "12px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-          EDIT CASE
+          {t.errorEdit}
         </button>
         <button onClick={onRetry} className="sc-display" style={{ flex: 1, background: INK, color: PAPER, border: "none", borderRadius: 4, padding: "12px", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
-          <RotateCcw size={14} /> RETRY
+          <RotateCcw size={14} /> {t.errorRetry}
         </button>
       </div>
     </div>
   );
 }
 
-function ReviewRow({ item, positive }) {
+function ReviewRow({ item, positive, t }) {
   return (
     <div style={{ display: "flex", gap: 10, padding: "12px 0", borderBottom: `1px solid ${INK}22` }}>
       {positive ? <ThumbsUp size={16} color={VERIFIED} style={{ flexShrink: 0, marginTop: 2 }} /> : <ThumbsDown size={16} color={ALARM} style={{ flexShrink: 0, marginTop: 2 }} />}
@@ -338,17 +381,23 @@ function ReviewRow({ item, positive }) {
             className="sc-mono"
             style={{ fontSize: 11, color: positive ? VERIFIED : ALARM, marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "underline", textUnderlineOffset: 2 }}
           >
-            SOURCE: {item.src} <ExternalLink size={11} />
+            {t.source}: {item.src} <ExternalLink size={11} />
           </a>
         ) : (
-          <div className="sc-mono" style={{ fontSize: 11, color: SLATE, marginTop: 4 }}>SOURCE: {item.src}</div>
+          <div className="sc-mono" style={{ fontSize: 11, color: SLATE, marginTop: 4 }}>{t.source}: {item.src}</div>
         )}
       </div>
     </div>
   );
 }
 
-function ResultsScreen({ query, result, caseId, fromCache, onNewCase }) {
+function ResultsScreen({ query, result, caseId, fromCache, onNewCase, t }) {
+  const VERDICT_META = {
+    trust: { label: t.verdictTrust, color: VERIFIED, Icon: ShieldCheck, rotate: "-6deg" },
+    caution: { label: t.verdictCaution, color: CAUTION, Icon: ShieldQuestion, rotate: "4deg" },
+    avoid: { label: t.verdictAvoid, color: ALARM, Icon: ShieldAlert, rotate: "-4deg" },
+    unknown: { label: t.verdictUnknown, color: SLATE, Icon: ShieldQuestion, rotate: "2deg" },
+  };
   const meta = VERDICT_META[result.verdict] || VERDICT_META.unknown;
   const total = (result.positives?.length || 0) + (result.negatives?.length || 0);
   const posPct = total > 0 ? Math.round((result.positives.length / total) * 100) : 50;
@@ -358,10 +407,10 @@ function ResultsScreen({ query, result, caseId, fromCache, onNewCase }) {
       <FontStyles />
       <div style={{ padding: "18px 20px 0", borderBottom: `1.5px dashed ${INK}55`, paddingBottom: 14 }}>
         <div className="sc-mono" style={{ fontSize: 11, color: SLATE, letterSpacing: 1.5, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span>CASE #{caseId} · {query.where.toUpperCase()}</span>
+          <span>#{caseId} · {query.where.toUpperCase()}</span>
           {fromCache && (
             <span style={{ color: VERIFIED, border: `1px solid ${VERIFIED}`, borderRadius: 3, padding: "1px 6px", fontSize: 10 }}>
-              ALREADY INVESTIGATED
+              {t.alreadyInvestigated}
             </span>
           )}
         </div>
@@ -386,7 +435,7 @@ function ResultsScreen({ query, result, caseId, fromCache, onNewCase }) {
         {total > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div className="sc-mono" style={{ fontSize: 11, color: SLATE, letterSpacing: 1, marginBottom: 6 }}>
-              {result.positives.length} POSITIVE · {result.negatives.length} NEGATIVE
+              {result.positives.length} {t.positive} · {result.negatives.length} {t.negative}
             </div>
             <div style={{ height: 8, borderRadius: 4, overflow: "hidden", display: "flex", background: "#ddd" }}>
               <div style={{ width: `${posPct}%`, background: VERIFIED }} />
@@ -397,20 +446,20 @@ function ResultsScreen({ query, result, caseId, fromCache, onNewCase }) {
 
         {result.positives?.length > 0 && (
           <div style={{ marginBottom: 8 }}>
-            <div className="sc-display" style={{ fontSize: 13, fontWeight: 700, color: VERIFIED, marginBottom: 2 }}>WHAT CHECKS OUT</div>
-            {result.positives.map((p, i) => <ReviewRow key={i} item={p} positive />)}
+            <div className="sc-display" style={{ fontSize: 13, fontWeight: 700, color: VERIFIED, marginBottom: 2 }}>{t.whatChecksOut}</div>
+            {result.positives.map((p, i) => <ReviewRow key={i} item={p} positive t={t} />)}
           </div>
         )}
 
         {result.negatives?.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <div className="sc-display" style={{ fontSize: 13, fontWeight: 700, color: ALARM, marginBottom: 2 }}>WHAT DOESN'T</div>
-            {result.negatives.map((n, i) => <ReviewRow key={i} item={n} positive={false} />)}
+            <div className="sc-display" style={{ fontSize: 13, fontWeight: 700, color: ALARM, marginBottom: 2 }}>{t.whatDoesnt}</div>
+            {result.negatives.map((n, i) => <ReviewRow key={i} item={n} positive={false} t={t} />)}
           </div>
         )}
 
         <div className="sc-mono" style={{ fontSize: 10, color: "#9A9689", marginTop: 20, lineHeight: 1.5 }}>
-          AI-GENERATED RESEARCH, NOT PROFESSIONAL ADVICE. VERIFY BEFORE MAKING A PURCHASE DECISION.
+          {t.disclaimer}
         </div>
       </div>
 
@@ -420,7 +469,7 @@ function ResultsScreen({ query, result, caseId, fromCache, onNewCase }) {
           className="sc-display"
           style={{ width: "100%", background: INK, color: PAPER, border: "none", borderRadius: 4, padding: "14px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
         >
-          CHECK ANOTHER AD
+          {t.checkAnother}
         </button>
       </div>
     </div>
@@ -437,26 +486,13 @@ function extractJson(text) {
 
 function normalizeKey(q) {
   const raw = (q.link?.trim() || q.description?.trim() || "").toLowerCase();
-  // storage keys can't contain whitespace, slashes, or quotes
   return "case:" + raw.replace(/[\s/\\'"]+/g, "_").slice(0, 150);
 }
 
 const FILLER_PHRASES = [
-  "losing weight with",
-  "lose weight with",
-  "help you lose weight",
-  "helps you lose weight",
-  "weight loss with",
-  "trying to",
-  "try this",
-  "get this",
-  "buy this",
-  "this is",
-  "that is",
-  "the ad for",
-  "an ad for",
-  "advertisement for",
-  "ad for",
+  "losing weight with", "lose weight with", "help you lose weight", "helps you lose weight",
+  "weight loss with", "trying to", "try this", "get this", "buy this", "this is", "that is",
+  "the ad for", "an ad for", "advertisement for", "ad for",
 ];
 
 const STOPWORDS = new Set([
@@ -466,9 +502,8 @@ const STOPWORDS = new Set([
 ]);
 
 // Lightweight storage wrapper backed by the browser's localStorage.
-// Note: this is per-device only (not shared across users like the chat
-// preview's window.storage was). Swapping this for a real shared database
-// is the natural next upgrade once the app has real users.
+// Note: this is per-device only (not shared across users). Swapping this for
+// a real shared database is the natural next upgrade once the app has real users.
 const storage = {
   async get(key) {
     try {
@@ -506,10 +541,7 @@ function significantWords(q) {
   for (const phrase of FILLER_PHRASES) {
     text = text.split(phrase).join(" ");
   }
-  const words = text
-    .replace(/[^a-z0-9\s-]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w && !STOPWORDS.has(w));
+  const words = text.replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter((w) => w && !STOPWORDS.has(w));
   return [...new Set(words)];
 }
 
@@ -527,8 +559,6 @@ async function findExistingMatch(curWords) {
       const setB = new Set(kw);
       let intersection = 0;
       for (const w of setA) if (setB.has(w)) intersection++;
-      // overlap coefficient: how much of the SMALLER set is shared — handles
-      // short queries ("Riseguide") matching longer ones ("Riseguide articulation practice")
       const overlap = intersection / Math.min(setA.size, setB.size);
       if (overlap > bestScore) {
         bestScore = overlap;
@@ -542,12 +572,30 @@ async function findExistingMatch(curWords) {
 }
 
 export default function ScamCheckApp() {
+  const [lang, setLangState] = useState(getInitialLang);
   const [screen, setScreen] = useState("splash");
   const [query, setQuery] = useState(null);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [caseId, setCaseId] = useState("0000");
   const [fromCache, setFromCache] = useState(false);
+
+  const t = translations[lang];
+  const isRtl = !!t.rtl;
+
+  useEffect(() => {
+    document.dir = isRtl ? "rtl" : "ltr";
+    document.documentElement.lang = lang;
+  }, [lang, isRtl]);
+
+  const setLang = (code) => {
+    setLangState(code);
+    try {
+      window.localStorage.setItem("sc-lang", code);
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const runInvestigation = async (q) => {
     setQuery(q);
@@ -556,7 +604,6 @@ export default function ScamCheckApp() {
     const curWords = significantWords(q);
     let key = null;
 
-    // Check if someone already investigated this same ad, even worded differently
     try {
       if (curWords.length) {
         const matchedKey = await findExistingMatch(curWords);
@@ -572,7 +619,6 @@ export default function ScamCheckApp() {
           }
         }
       } else {
-        // link-only submission — fall back to exact link matching
         const linkKey = normalizeKey(q);
         const cached = await storage.get(linkKey);
         if (cached?.value) {
@@ -608,7 +654,7 @@ export default function ScamCheckApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           max_tokens: 1800,
-          system: SYSTEM_PROMPT,
+          system: buildSystemPrompt(t, t.name),
           messages: [{ role: "user", content: userMessage }],
         }),
       });
@@ -627,7 +673,6 @@ export default function ScamCheckApp() {
       setResult(parsed);
       setScreen("results");
 
-      // Save for the next person who checks this same ad
       try {
         await storage.set(key, JSON.stringify({ result: parsed, caseId: newCaseId }));
       } catch (e) {
@@ -635,9 +680,7 @@ export default function ScamCheckApp() {
       }
     } catch (err) {
       setErrorMsg(
-        err.message === "No JSON found in response" || err.message.includes("JSON")
-          ? "We got a response back but couldn't make sense of it. Try again."
-          : "Couldn't complete the research right now. Try again in a moment."
+        err.message === "No JSON found in response" || err.message.includes("JSON") ? t.errorJsonFailed : t.errorReqFailed
       );
       setScreen("error");
     }
@@ -645,6 +688,7 @@ export default function ScamCheckApp() {
 
   return (
     <div
+      dir={isRtl ? "rtl" : "ltr"}
       style={{
         width: "100%",
         maxWidth: 400,
@@ -657,20 +701,16 @@ export default function ScamCheckApp() {
         border: "6px solid #222633",
       }}
     >
-      {screen === "splash" && <Splash onStart={() => setScreen("input")} />}
+      {screen === "splash" && <Splash onStart={() => setScreen("input")} t={t} lang={lang} setLang={setLang} />}
       {screen === "input" && (
-        <InputScreen onBack={() => setScreen("splash")} onSubmit={runInvestigation} prefill={query} />
+        <InputScreen onBack={() => setScreen("splash")} onSubmit={runInvestigation} prefill={query} t={t} lang={lang} setLang={setLang} />
       )}
-      {screen === "loading" && <LoadingScreen />}
+      {screen === "loading" && <LoadingScreen t={t} />}
       {screen === "error" && (
-        <ErrorScreen
-          message={errorMsg}
-          onRetry={() => runInvestigation(query)}
-          onBack={() => setScreen("input")}
-        />
+        <ErrorScreen message={errorMsg} onRetry={() => runInvestigation(query)} onBack={() => setScreen("input")} t={t} />
       )}
       {screen === "results" && result && (
-        <ResultsScreen query={query} result={result} caseId={caseId} fromCache={fromCache} onNewCase={() => setScreen("input")} />
+        <ResultsScreen query={query} result={result} caseId={caseId} fromCache={fromCache} onNewCase={() => setScreen("input")} t={t} />
       )}
     </div>
   );
