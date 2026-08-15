@@ -13,6 +13,9 @@ import {
   RotateCcw,
   ExternalLink,
   Globe,
+  Mail,
+  LogOut,
+  Clock,
 } from "lucide-react";
 import { translations, LANGUAGE_ORDER } from "./translations";
 import { supabase } from "./supabaseClient";
@@ -144,6 +147,105 @@ function LanguagePicker({ lang, setLang, dark }) {
   );
 }
 
+const FREE_MONTHLY_LIMIT = 5;
+
+async function getMonthlyFreshCount(userId) {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const { count, error } = await supabase
+      .from("search_events")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_fresh", true)
+      .gte("created_at", startOfMonth.toISOString());
+    if (error) return 0; // fail open — don't block a user over a read error
+    return count || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function AuthScreen({ t }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+
+  const handleSend = async () => {
+    if (!email.trim()) return;
+    setStatus("sending");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setStatus(error ? "error" : "sent");
+  };
+
+  return (
+    <div className="sc-tape" style={{ height: "100%", color: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center" }}>
+      <FontStyles />
+      {status === "sent" ? (
+        <>
+          <Mail size={40} color={VERIFIED} style={{ marginBottom: 16 }} />
+          <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{t.checkEmailTitle}</div>
+          <div className="sc-body" style={{ fontSize: 14, color: "#C9C6BC", lineHeight: 1.5 }}>{t.checkEmailBody}</div>
+        </>
+      ) : (
+        <>
+          <Mail size={36} color={ALARM} style={{ marginBottom: 16 }} />
+          <div className="sc-display" style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{t.signInTitle}</div>
+          <div className="sc-body" style={{ fontSize: 14, color: "#C9C6BC", marginBottom: 24, lineHeight: 1.5, maxWidth: 300 }}>{t.signInSubtitle}</div>
+          <div style={{ width: "100%", maxWidth: 300 }}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.emailPlaceholder}
+              style={{ ...inputStyle, marginBottom: 12 }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={status === "sending" || !email.trim()}
+              className="sc-display"
+              style={{
+                width: "100%",
+                background: ALARM,
+                color: INK,
+                border: "none",
+                borderRadius: 4,
+                padding: "14px 20px",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: status === "sending" ? "not-allowed" : "pointer",
+                opacity: status === "sending" ? 0.7 : 1,
+              }}
+            >
+              {t.sendLinkBtn}
+            </button>
+            {status === "error" && (
+              <div className="sc-body" style={{ fontSize: 12, color: ALARM, marginTop: 10 }}>{t.signInError}</div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LimitScreen({ t, onSignOut }) {
+  return (
+    <div style={{ height: "100%", background: PAPER, color: INK, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center" }}>
+      <FontStyles />
+      <Clock size={40} color={CAUTION} style={{ marginBottom: 16 }} />
+      <div className="sc-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{t.limitTitle}</div>
+      <div className="sc-body" style={{ fontSize: 14, color: "#4A4E5A", lineHeight: 1.5, marginBottom: 20 }}>{t.limitBody}</div>
+      <button onClick={onSignOut} className="sc-mono" style={{ fontSize: 12, color: SLATE, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+        {t.signOut}
+      </button>
+    </div>
+  );
+}
+
 function Splash({ onStart, t, lang, setLang }) {
   return (
     <div className="sc-tape" style={{ height: "100%", display: "flex", flexDirection: "column", color: PAPER }}>
@@ -237,7 +339,7 @@ const inputStyle = {
   outline: "none",
 };
 
-function InputScreen({ onBack, onSubmit, prefill, t, lang, setLang }) {
+function InputScreen({ onBack, onSubmit, prefill, t, lang, setLang, onSignOut }) {
   const [where, setWhere] = useState(prefill?.where || WHERE_OPTIONS[0]);
   const [description, setDescription] = useState(prefill?.description || "");
   const [link, setLink] = useState(prefill?.link || "");
@@ -259,6 +361,9 @@ function InputScreen({ onBack, onSubmit, prefill, t, lang, setLang }) {
           <div className="sc-display" style={{ fontSize: 18, fontWeight: 700 }}>{t.describeAd}</div>
         </div>
         <LanguagePicker lang={lang} setLang={setLang} />
+        <button onClick={onSignOut} aria-label={t.signOut} style={{ background: "none", border: "none", cursor: "pointer", color: SLATE, padding: 4 }}>
+          <LogOut size={16} />
+        </button>
       </div>
 
       <div style={{ padding: "20px", overflowY: "auto", flex: 1, minHeight: 0 }}>
@@ -559,9 +664,9 @@ async function saveCachedResult(slug, lang, result, caseId) {
   }
 }
 
-async function logSearchEvent(slug) {
+async function logSearchEvent(slug, userId, isFresh) {
   try {
-    await supabase.from("search_events").insert({ slug });
+    await supabase.from("search_events").insert({ slug, user_id: userId, is_fresh: isFresh });
   } catch (e) {
     // non-critical — powers the future leaderboard, shouldn't block a search
   }
@@ -576,6 +681,9 @@ export default function ScamCheckApp() {
   const [caseId, setCaseId] = useState("0000");
   const [fromCache, setFromCache] = useState(false);
 
+  const [session, setSession] = useState(undefined); // undefined = still checking, null = signed out
+  const [limitReached, setLimitReached] = useState(false);
+
   const t = translations[lang];
   const isRtl = !!t.rtl;
 
@@ -583,6 +691,16 @@ export default function ScamCheckApp() {
     document.dir = isRtl ? "rtl" : "ltr";
     document.documentElement.lang = lang;
   }, [lang, isRtl]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setLimitReached(false);
+      setScreen("splash");
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   const setLang = (code) => {
     setLangState(code);
@@ -593,7 +711,12 @@ export default function ScamCheckApp() {
     }
   };
 
+  const handleSignOut = () => {
+    supabase.auth.signOut();
+  };
+
   const runInvestigation = async (q) => {
+    const userId = session?.user?.id;
     setQuery(q);
     setFromCache(false);
 
@@ -610,7 +733,7 @@ export default function ScamCheckApp() {
             setCaseId(cached.caseId);
             setFromCache(true);
             setScreen("results");
-            logSearchEvent(matchedSlug);
+            logSearchEvent(matchedSlug, userId, false);
             return;
           }
         }
@@ -622,7 +745,7 @@ export default function ScamCheckApp() {
           setCaseId(cached.caseId);
           setFromCache(true);
           setScreen("results");
-          logSearchEvent(linkSlug);
+          logSearchEvent(linkSlug, userId, false);
           return;
         }
       }
@@ -631,6 +754,13 @@ export default function ScamCheckApp() {
     }
 
     slug = curWords.length ? [...curWords].sort().join("-").slice(0, 100) : normalizeSlug(q);
+
+    // Only fresh, API-costing searches count against the free monthly limit
+    const usedThisMonth = await getMonthlyFreshCount(userId);
+    if (usedThisMonth >= FREE_MONTHLY_LIMIT) {
+      setLimitReached(true);
+      return;
+    }
 
     setScreen("loading");
     const newCaseId = String(1000 + Math.floor(Math.random() * 8999));
@@ -670,7 +800,7 @@ export default function ScamCheckApp() {
       setScreen("results");
 
       saveCachedResult(slug, lang, parsed, newCaseId);
-      logSearchEvent(slug);
+      logSearchEvent(slug, userId, true);
     } catch (err) {
       setErrorMsg(
         err.message === "No JSON found in response" || err.message.includes("JSON") ? t.errorJsonFailed : t.errorReqFailed
@@ -678,6 +808,25 @@ export default function ScamCheckApp() {
       setScreen("error");
     }
   };
+
+  let body;
+  if (session === undefined) {
+    body = <LoadingScreen t={t} />;
+  } else if (session === null) {
+    body = <AuthScreen t={t} />;
+  } else if (limitReached) {
+    body = <LimitScreen t={t} onSignOut={handleSignOut} />;
+  } else if (screen === "splash") {
+    body = <Splash onStart={() => setScreen("input")} t={t} lang={lang} setLang={setLang} />;
+  } else if (screen === "input") {
+    body = <InputScreen onBack={() => setScreen("splash")} onSubmit={runInvestigation} prefill={query} t={t} lang={lang} setLang={setLang} onSignOut={handleSignOut} />;
+  } else if (screen === "loading") {
+    body = <LoadingScreen t={t} />;
+  } else if (screen === "error") {
+    body = <ErrorScreen message={errorMsg} onRetry={() => runInvestigation(query)} onBack={() => setScreen("input")} t={t} />;
+  } else if (screen === "results" && result) {
+    body = <ResultsScreen query={query} result={result} caseId={caseId} fromCache={fromCache} onNewCase={() => setScreen("input")} t={t} />;
+  }
 
   return (
     <div
@@ -694,17 +843,7 @@ export default function ScamCheckApp() {
         border: "6px solid #222633",
       }}
     >
-      {screen === "splash" && <Splash onStart={() => setScreen("input")} t={t} lang={lang} setLang={setLang} />}
-      {screen === "input" && (
-        <InputScreen onBack={() => setScreen("splash")} onSubmit={runInvestigation} prefill={query} t={t} lang={lang} setLang={setLang} />
-      )}
-      {screen === "loading" && <LoadingScreen t={t} />}
-      {screen === "error" && (
-        <ErrorScreen message={errorMsg} onRetry={() => runInvestigation(query)} onBack={() => setScreen("input")} t={t} />
-      )}
-      {screen === "results" && result && (
-        <ResultsScreen query={query} result={result} caseId={caseId} fromCache={fromCache} onNewCase={() => setScreen("input")} t={t} />
-      )}
+      {body}
     </div>
   );
 }

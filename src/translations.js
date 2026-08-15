@@ -48,7 +48,19 @@ export const translations = {
     "verdictCaution": "PROCEED WITH CAUTION",
     "verdictAvoid": "LIKELY A SCAM",
     "verdictUnknown": "NOT ENOUGH TO GO ON",
-    "language": "Language"
+    "language": "Language",
+    "signInTitle": "Sign in to continue",
+    "signInSubtitle": "One quick step so we can track your free searches fairly.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "sendLinkBtn": "SEND SIGN-IN LINK",
+    "checkEmailTitle": "Check your email",
+    "checkEmailBody": "We sent you a sign-in link. Tap it to continue — no password needed.",
+    "signInError": "Couldn't send the link. Check the address and try again.",
+    "signOut": "Sign out",
+    "limitTitle": "You've used this month's free searches",
+    "limitBody": "You've used all 5 free searches for this month. Premium is coming soon — for now, free searches reset at the start of next month.",
+    "searchesLeftSuffix": "searches left this month"
   },
   "zh": {
     "name": "Chinese",
@@ -97,7 +109,19 @@ export const translations = {
     "verdictCaution": "谨慎对待",
     "verdictAvoid": "疑似骗局",
     "verdictUnknown": "信息不足",
-    "language": "语言"
+    "language": "语言",
+    "signInTitle": "登录以继续",
+    "signInSubtitle": "只需一步，以便公平地计算您的免费搜索次数。",
+    "emailLabel": "电子邮箱",
+    "emailPlaceholder": "you@example.com",
+    "sendLinkBtn": "发送登录链接",
+    "checkEmailTitle": "请查收邮件",
+    "checkEmailBody": "我们已向您发送登录链接。点击链接即可继续——无需密码。",
+    "signInError": "链接发送失败，请检查邮箱地址后重试。",
+    "signOut": "退出登录",
+    "limitTitle": "本月免费搜索次数已用完",
+    "limitBody": "您本月的5次免费搜索已用完。高级版即将推出——目前，免费搜索次数将在下月初重置。",
+    "searchesLeftSuffix": "本月剩余搜索次数"
   },
   "hi": {
     "name": "Hindi",
@@ -146,7 +170,19 @@ export const translations = {
     "verdictCaution": "सावधानी बरतें",
     "verdictAvoid": "धोखा लगता है",
     "verdictUnknown": "पर्याप्त जानकारी नहीं",
-    "language": "भाषा"
+    "language": "भाषा",
+    "signInTitle": "जारी रखने के लिए साइन इन करें",
+    "signInSubtitle": "आपकी मुफ्त खोजों को सही तरीके से गिनने के लिए बस एक त्वरित कदम।",
+    "emailLabel": "ईमेल पता",
+    "emailPlaceholder": "aap@example.com",
+    "sendLinkBtn": "साइन-इन लिंक भेजें",
+    "checkEmailTitle": "अपना ईमेल जांचें",
+    "checkEmailBody": "हमने आपको एक साइन-इन लिंक भेजा है। जारी रखने के लिए उस पर टैप करें — किसी पासवर्ड की ज़रूरत नहीं।",
+    "signInError": "लिंक नहीं भेजा जा सका। पता जांचें और फिर से कोशिश करें।",
+    "signOut": "साइन आउट करें",
+    "limitTitle": "आपने इस महीने की मुफ्त खोजें इस्तेमाल कर ली हैं",
+    "limitBody": "आपने इस महीने की सभी 5 मुफ्त खोजें इस्तेमाल कर ली हैं। प्रीमियम जल्द ही आ रहा है — फिलहाल, मुफ्त खोजें अगले महीने की शुरुआत में फिर से शुरू होंगी।",
+    "searchesLeftSuffix": "इस महीने बची खोजें"
   },
   "es": {
     "name": "Spanish",
@@ -195,7 +231,19 @@ export const translations = {
     "verdictCaution": "PROCEDE CON CAUTELA",
     "verdictAvoid": "PARECE UNA ESTAFA",
     "verdictUnknown": "NO HAY SUFICIENTE INFORMACIÓN",
-    "language": "Idioma"
+    "language": "Idioma",
+    "signInTitle": "Inicia sesión para continuar",
+    "signInSubtitle": "Un paso rápido para llevar un control justo de tus búsquedas gratuitas.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "tucorreo@ejemplo.com",
+    "sendLinkBtn": "ENVIAR ENLACE DE ACCESO",
+    "checkEmailTitle": "Revisa tu correo",
+    "checkEmailBody": "Te enviamos un enlace de acceso. Tócalo para continuar — no necesitas contraseña.",
+    "signInError": "No se pudo enviar el enlace. Verifica la dirección e inténtalo de nuevo.",
+    "signOut": "Cerrar sesión",
+    "limitTitle": "Ya usaste tus búsquedas gratuitas de este mes",
+    "limitBody": "Ya usaste tus 5 búsquedas gratuitas de este mes. La versión premium llega pronto — por ahora, las búsquedas gratuitas se reinician al comenzar el próximo mes.",
+    "searchesLeftSuffix": "búsquedas restantes este mes"
   },
   "fr": {
     "name": "French",
@@ -244,7 +292,19 @@ export const translations = {
     "verdictCaution": "PROCÉDEZ AVEC PRUDENCE",
     "verdictAvoid": "SEMBLE ÊTRE UNE ARNAQUE",
     "verdictUnknown": "PAS ASSEZ D'INFORMATIONS",
-    "language": "Langue"
+    "language": "Langue",
+    "signInTitle": "Connectez-vous pour continuer",
+    "signInSubtitle": "Une étape rapide pour suivre équitablement vos recherches gratuites.",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "sendLinkBtn": "ENVOYER LE LIEN DE CONNEXION",
+    "checkEmailTitle": "Consultez vos e-mails",
+    "checkEmailBody": "Nous vous avons envoyé un lien de connexion. Touchez-le pour continuer — aucun mot de passe requis.",
+    "signInError": "Impossible d'envoyer le lien. Vérifiez l'adresse et réessayez.",
+    "signOut": "Se déconnecter",
+    "limitTitle": "Vous avez utilisé vos recherches gratuites de ce mois-ci",
+    "limitBody": "Vous avez utilisé vos 5 recherches gratuites de ce mois-ci. La version premium arrive bientôt — en attendant, les recherches gratuites se réinitialisent au début du mois prochain.",
+    "searchesLeftSuffix": "recherches restantes ce mois-ci"
   },
   "ar": {
     "name": "Arabic",
@@ -293,7 +353,19 @@ export const translations = {
     "verdictCaution": "توخّ الحذر",
     "verdictAvoid": "يبدو نصبًا",
     "verdictUnknown": "لا توجد معلومات كافية",
-    "language": "اللغة"
+    "language": "اللغة",
+    "signInTitle": "سجّل الدخول للمتابعة",
+    "signInSubtitle": "خطوة سريعة واحدة لتتبع عمليات البحث المجانية الخاصة بك بعدل.",
+    "emailLabel": "البريد الإلكتروني",
+    "emailPlaceholder": "you@example.com",
+    "sendLinkBtn": "إرسال رابط تسجيل الدخول",
+    "checkEmailTitle": "تحقق من بريدك الإلكتروني",
+    "checkEmailBody": "أرسلنا لك رابط تسجيل الدخول. اضغط عليه للمتابعة — لا حاجة لكلمة مرور.",
+    "signInError": "تعذّر إرسال الرابط. تحقق من العنوان وحاول مرة أخرى.",
+    "signOut": "تسجيل الخروج",
+    "limitTitle": "لقد استخدمت عمليات البحث المجانية لهذا الشهر",
+    "limitBody": "لقد استخدمت جميع عمليات البحث المجانية الخمس لهذا الشهر. النسخة المميزة قادمة قريبًا — في الوقت الحالي، ستُجدَّد عمليات البحث المجانية في بداية الشهر القادم.",
+    "searchesLeftSuffix": "عمليات بحث متبقية هذا الشهر"
   },
   "bn": {
     "name": "Bengali",
@@ -342,7 +414,19 @@ export const translations = {
     "verdictCaution": "সতর্কতার সাথে এগোন",
     "verdictAvoid": "প্রতারণা মনে হচ্ছে",
     "verdictUnknown": "যথেষ্ট তথ্য নেই",
-    "language": "ভাষা"
+    "language": "ভাষা",
+    "signInTitle": "চালিয়ে যেতে সাইন ইন করুন",
+    "signInSubtitle": "আপনার ফ্রি সার্চগুলো সঠিকভাবে গণনা করার জন্য মাত্র একটি ধাপ।",
+    "emailLabel": "ইমেইল ঠিকানা",
+    "emailPlaceholder": "apni@example.com",
+    "sendLinkBtn": "সাইন-ইন লিংক পাঠান",
+    "checkEmailTitle": "আপনার ইমেইল দেখুন",
+    "checkEmailBody": "আমরা আপনাকে একটি সাইন-ইন লিংক পাঠিয়েছি। চালিয়ে যেতে সেটিতে ট্যাপ করুন — কোনো পাসওয়ার্ডের প্রয়োজন নেই।",
+    "signInError": "লিংক পাঠানো যায়নি। ঠিকানা যাচাই করে আবার চেষ্টা করুন।",
+    "signOut": "সাইন আউট করুন",
+    "limitTitle": "আপনি এই মাসের ফ্রি সার্চ ব্যবহার করে ফেলেছেন",
+    "limitBody": "আপনি এই মাসের সব ৫টি ফ্রি সার্চ ব্যবহার করে ফেলেছেন। প্রিমিয়াম শীঘ্রই আসছে — আপাতত, ফ্রি সার্চ পরের মাসের শুরুতে আবার চালু হবে।",
+    "searchesLeftSuffix": "এই মাসে বাকি সার্চ"
   },
   "pt": {
     "name": "Portuguese",
@@ -391,7 +475,19 @@ export const translations = {
     "verdictCaution": "PROSSIGA COM CAUTELA",
     "verdictAvoid": "PARECE UM GOLPE",
     "verdictUnknown": "INFORMAÇÃO INSUFICIENTE",
-    "language": "Idioma"
+    "language": "Idioma",
+    "signInTitle": "Entre para continuar",
+    "signInSubtitle": "Um passo rápido para controlar suas buscas gratuitas de forma justa.",
+    "emailLabel": "Endereço de e-mail",
+    "emailPlaceholder": "voce@exemplo.com",
+    "sendLinkBtn": "ENVIAR LINK DE ACESSO",
+    "checkEmailTitle": "Verifique seu e-mail",
+    "checkEmailBody": "Enviamos um link de acesso. Toque nele para continuar — sem necessidade de senha.",
+    "signInError": "Não foi possível enviar o link. Verifique o endereço e tente novamente.",
+    "signOut": "Sair",
+    "limitTitle": "Você já usou as buscas gratuitas deste mês",
+    "limitBody": "Você já usou suas 5 buscas gratuitas deste mês. O plano premium está chegando em breve — por enquanto, as buscas gratuitas são renovadas no início do próximo mês.",
+    "searchesLeftSuffix": "buscas restantes este mês"
   },
   "ru": {
     "name": "Russian",
@@ -440,7 +536,19 @@ export const translations = {
     "verdictCaution": "ДЕЙСТВУЙТЕ ОСТОРОЖНО",
     "verdictAvoid": "ПОХОЖЕ НА ОБМАН",
     "verdictUnknown": "НЕДОСТАТОЧНО ДАННЫХ",
-    "language": "Язык"
+    "language": "Язык",
+    "signInTitle": "Войдите, чтобы продолжить",
+    "signInSubtitle": "Один быстрый шаг, чтобы честно учитывать ваши бесплатные поиски.",
+    "emailLabel": "Электронная почта",
+    "emailPlaceholder": "you@example.com",
+    "sendLinkBtn": "ОТПРАВИТЬ ССЫЛКУ ДЛЯ ВХОДА",
+    "checkEmailTitle": "Проверьте почту",
+    "checkEmailBody": "Мы отправили вам ссылку для входа. Нажмите на неё, чтобы продолжить — пароль не нужен.",
+    "signInError": "Не удалось отправить ссылку. Проверьте адрес и попробуйте снова.",
+    "signOut": "Выйти",
+    "limitTitle": "Бесплатные поиски за этот месяц закончились",
+    "limitBody": "Вы использовали все 5 бесплатных поисков за этот месяц. Премиум-версия скоро появится — а пока бесплатные поиски обновятся в начале следующего месяца.",
+    "searchesLeftSuffix": "поисков осталось в этом месяце"
   },
   "ur": {
     "name": "Urdu",
@@ -489,7 +597,19 @@ export const translations = {
     "verdictCaution": "احتیاط سے آگے بڑھیں",
     "verdictAvoid": "دھوکہ لگتا ہے",
     "verdictUnknown": "کافی معلومات نہیں",
-    "language": "زبان"
+    "language": "زبان",
+    "signInTitle": "جاری رکھنے کے لیے سائن ان کریں",
+    "signInSubtitle": "آپ کی مفت تلاشوں کو منصفانہ طور پر شمار کرنے کے لیے صرف ایک تیز قدم۔",
+    "emailLabel": "ای میل ایڈریس",
+    "emailPlaceholder": "aap@example.com",
+    "sendLinkBtn": "سائن ان لنک بھیجیں",
+    "checkEmailTitle": "اپنا ای میل چیک کریں",
+    "checkEmailBody": "ہم نے آپ کو ایک سائن ان لنک بھیجا ہے۔ جاری رکھنے کے لیے اس پر ٹیپ کریں — کسی پاس ورڈ کی ضرورت نہیں۔",
+    "signInError": "لنک نہیں بھیجا جا سکا۔ ایڈریس چیک کریں اور دوبارہ کوشش کریں۔",
+    "signOut": "سائن آؤٹ کریں",
+    "limitTitle": "آپ اس مہینے کی مفت تلاشیں استعمال کر چکے ہیں",
+    "limitBody": "آپ اس مہینے کی تمام 5 مفت تلاشیں استعمال کر چکے ہیں۔ پریمیم جلد آ رہا ہے — فی الحال، مفت تلاشیں اگلے مہینے کے آغاز پر دوبارہ شروع ہوں گی۔",
+    "searchesLeftSuffix": "اس مہینے باقی تلاشیں"
   },
   "he": {
     "name": "Hebrew",
@@ -538,7 +658,19 @@ export const translations = {
     "verdictCaution": "המשיכו בזהירות",
     "verdictAvoid": "נראה כמו הונאה",
     "verdictUnknown": "אין מספיק מידע",
-    "language": "שפה"
+    "language": "שפה",
+    "signInTitle": "התחברו כדי להמשיך",
+    "signInSubtitle": "צעד מהיר אחד כדי לספור בצורה הוגנת את החיפושים החינמיים שלכם.",
+    "emailLabel": "כתובת אימייל",
+    "emailPlaceholder": "example@example.com",
+    "sendLinkBtn": "שלחו קישור התחברות",
+    "checkEmailTitle": "בדקו את האימייל שלכם",
+    "checkEmailBody": "שלחנו לכם קישור התחברות. הקישו עליו כדי להמשיך — לא נדרשת סיסמה.",
+    "signInError": "לא הצלחנו לשלוח את הקישור. בדקו את הכתובת ונסו שוב.",
+    "signOut": "התנתקות",
+    "limitTitle": "ניצלתם את החיפושים החינמיים לחודש הזה",
+    "limitBody": "ניצלתם את כל 5 החיפושים החינמיים לחודש הזה. הגרסה המתקדמת בדרך בקרוב — בינתיים, החיפושים החינמיים יתאפסו בתחילת החודש הבא.",
+    "searchesLeftSuffix": "חיפושים נותרו החודש"
   }
 };
 
