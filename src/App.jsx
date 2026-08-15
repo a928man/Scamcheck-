@@ -149,7 +149,7 @@ function LanguagePicker({ lang, setLang, dark }) {
 
 const FREE_MONTHLY_LIMIT = 5;
 
-async function getMonthlyFreshCount(userId) {
+async function getMonthlyUsedCount(userId) {
   try {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -158,7 +158,6 @@ async function getMonthlyFreshCount(userId) {
       .from("search_events")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
-      .eq("is_fresh", true)
       .gte("created_at", startOfMonth.toISOString());
     if (error) return 0; // fail open — don't block a user over a read error
     return count || 0;
@@ -720,6 +719,14 @@ export default function ScamCheckApp() {
     setQuery(q);
     setFromCache(false);
 
+    // Every search counts against the free monthly limit, cached or not —
+    // otherwise popular ads become an unlimited free tier by accident
+    const usedThisMonth = await getMonthlyUsedCount(userId);
+    if (usedThisMonth >= FREE_MONTHLY_LIMIT) {
+      setLimitReached(true);
+      return;
+    }
+
     const curWords = significantWords(q);
     let slug = null;
 
@@ -754,13 +761,6 @@ export default function ScamCheckApp() {
     }
 
     slug = curWords.length ? [...curWords].sort().join("-").slice(0, 100) : normalizeSlug(q);
-
-    // Only fresh, API-costing searches count against the free monthly limit
-    const usedThisMonth = await getMonthlyFreshCount(userId);
-    if (usedThisMonth >= FREE_MONTHLY_LIMIT) {
-      setLimitReached(true);
-      return;
-    }
 
     setScreen("loading");
     const newCaseId = String(1000 + Math.floor(Math.random() * 8999));
